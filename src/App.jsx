@@ -1,34 +1,88 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import './App.css'
+import React, { useState, useEffect } from "react";
+import styled from "@emotion/styled";
+import ImagenCripto from "./img/imagen-criptos.png";
+import Formulario from "./components/Formulario";
+import Resultado from "./components/Resultado";
+import Spinner from "./components/Spinner";
+
+const Contenedor = styled.div`
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 90%;
+  @media (min-width: 992px) {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    column-gap: 2rem;
+  }
+`;
+
+const Imagen = styled.img`
+  max-width: 400px;
+  width: 80%;
+  margin: 100px auto 0 auto;
+  display: block;
+`;
+
+const Heading = styled.h1`
+  font-family: "Lato", sans-serif;
+  color: #fff;
+  text-align: center;
+  font-weight: 700;
+  margin-top: 80px;
+  margin-bottom: 70px;
+  font-size: 34px;
+
+  &::after {
+    content: "";
+    width: 100px;
+    height: 6px;
+    background-color: #66a2fe;
+    display: block;
+    margin: 10px auto 0 auto;
+  }
+`;
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [monedas, setMonedas] = useState({});
+  const [resultado, setResultado] = useState({});
+  const [cargando, setCargando] = useState(false);
+
+  useEffect(() => {
+    if (Object.keys(monedas).length > 0) {
+      const cotizarCripto = async () => {
+        setCargando(true);
+        const { moneda, criptomoneda } = monedas;
+        const url = `https://min-api.cryptocompare.com/data/pricemultifull?fsyms=${criptomoneda}&tsyms=${moneda}`;
+
+        const respuesta = await fetch(url);
+        const resultado = await respuesta.json();
+
+        setResultado(resultado.DISPLAY[criptomoneda][moneda]);
+
+        setCargando(false);
+      };
+
+      cotizarCripto();
+    }
+  }, [monedas]);
 
   return (
-    <div className="App">
+    <Contenedor>
+      <Imagen src={ImagenCripto} alt="Imagen de criptomonedas" />
       <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+        <Heading>Cotiza Criptomonedas en el Momento</Heading>
+        <Formulario setMonedas={setMonedas} />
+
+        {cargando ? (
+          <Spinner />
+        ) : (
+          Object.keys(resultado).length > 0 && (
+            <Resultado resultado={resultado} />
+          )
+        )}
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </div>
-  )
+    </Contenedor>
+  );
 }
 
-export default App
+export default App;
